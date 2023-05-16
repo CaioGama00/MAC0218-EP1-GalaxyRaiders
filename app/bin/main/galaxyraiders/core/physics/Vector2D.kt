@@ -24,7 +24,10 @@ data class Vector2D(val dx: Double, val dy: Double) {
     }
 
   val normal: Vector2D
-    get() = Vector2D(-dy, dx)
+    get() {
+      val mag = magnitude
+      return Vector2D(dy / mag, -dx / mag)
+    }
 
   operator fun times(scalar: Double): Vector2D {
     return Vector2D(dx * scalar, dy * scalar)
