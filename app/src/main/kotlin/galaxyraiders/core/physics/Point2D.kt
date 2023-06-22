@@ -27,7 +27,7 @@ data class Point2D(val x: Double, val y: Double) {
     return -vector.normal
   }
 
-  fun contactVector(p: Point2D): Vector2D { 
+  fun contactVector(p: Point2D): Vector2D {
     val vector = impactVector(p)
     return vector.normal
   }
@@ -41,5 +41,6 @@ data class Point2D(val x: Double, val y: Double) {
   fun distance(p: Point2D): Double {
     val dx = p.x - x
     val dy = p.y - y
-    return sqrt(dx * dx + dy * dy) }
+    return sqrt(dx * dx + dy * dy)
+  }
 }

@@ -27,7 +27,7 @@ data class Point2D(val x: Double, val y: Double) {
     return -vector.normal
   }
 
-  fun contactVector(p: Point2D): Vector2D { 
+  fun contactVector(p: Point2D): Vector2D {
     val vector = impactVector(p)
     return vector.normal
   }

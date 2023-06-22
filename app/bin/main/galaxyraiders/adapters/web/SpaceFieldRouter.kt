@@ -12,7 +12,7 @@ import io.javalin.http.Context
 class SpaceFieldRouter : Router, Visualizer {
   data class SpaceFieldDTO(
     val ship: SpaceShip,
-    val asteroids: List<Asteroid>,
+    val asteroids: MutabList<Asteroid>,
     val missiles: List<Missile>,
   )
 

@@ -32,14 +32,21 @@ data class SpaceField(val width: Int, val height: Int, val generator: RandomGene
 
   val ship = initializeShip()
 
+  var asteroidsDestroyed: Int = 0
+
+  var points: Int = 0
+
   var missiles: List<Missile> = emptyList()
     private set
 
   var asteroids: List<Asteroid> = emptyList()
     private set
 
+  var explosions: List<Explosion> = emptyList()
+    private set
+
   val spaceObjects: List<SpaceObject>
-    get() = listOf(this.ship) + this.missiles + this.asteroids
+    get() = listOf(this.ship) + this.missiles + this.asteroids + this.explosions
 
   fun moveShip() {
     this.ship.move(boundaryX, boundaryY)
@@ -61,6 +68,43 @@ data class SpaceField(val width: Int, val height: Int, val generator: RandomGene
     this.asteroids += this.createAsteroidWithRandomProperties()
   }
 
+  fun generateExplosion(point: Point2D) {
+    this.explosions += this.createExplosion(point)
+    this.asteroidsDestroyed += 1
+  }
+
+  fun triggerExplosions() {
+    explosions.toList().forEach { it.trigger() }
+  }
+
+  fun clearExplosions() {
+    val explosion = explosions.toMutableList()
+    explosion.toList().forEach { if (it.isTriggered()) explosion.remove(it) }
+    explosions = explosion.toList()
+  }
+
+  fun clearObject(obj: SpaceObject) {
+    if (obj is Asteroid) {
+      val asteroid = this.asteroids.toMutableList()
+      asteroid.remove(obj)
+      this.asteroids = asteroid.toList()
+    } else {
+      val missile = this.missiles.toMutableList()
+      missile.remove(obj)
+      this.missiles = missile.toList()
+    }
+  }
+
+  fun createExplosion(position: Point2D): Explosion {
+    return Explosion(
+      isTriggered = false,
+      initialPosition = position,
+      initialVelocity = Vector2D(dx = 0.0, dy = 0.0),
+      radius = 3.0,
+      mass = 0.0
+    )
+  }
+
   fun trimMissiles() {
     this.missiles = this.missiles.filter {
       it.inBoundaries(this.boundaryX, this.boundaryY)
@@ -69,6 +113,12 @@ data class SpaceField(val width: Int, val height: Int, val generator: RandomGene
 
   fun trimAsteroids() {
     this.asteroids = this.asteroids.filter {
+      it.inBoundaries(this.boundaryX, this.boundaryY)
+    }
+  }
+
+  fun trimExplosions() {
+    this.explosions = this.explosions.filter {
       it.inBoundaries(this.boundaryX, this.boundaryY)
     }
   }

@@ -1,6 +1,7 @@
 package galaxyraiders.core.physics
-import kotlin.math.*
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import kotlin.math.atan2
+import kotlin.math.hypot
 
 @JsonIgnoreProperties("unit", "normal", "degree", "magnitude")
 data class Vector2D(val dx: Double, val dy: Double) {
@@ -19,8 +20,8 @@ data class Vector2D(val dx: Double, val dy: Double) {
 
   val unit: Vector2D
     get() {
-        val mag = magnitude
-        return Vector2D(dx / mag, dy / mag)
+      val mag = magnitude
+      return Vector2D(dx / mag, dy / mag)
     }
 
   val normal: Vector2D
@@ -64,10 +65,10 @@ data class Vector2D(val dx: Double, val dy: Double) {
 
   fun vectorProject(target: Vector2D): Vector2D {
     val magnitudeSquared = target.magnitude * target.magnitude
-    return target* (this * target) / magnitudeSquared 
+    return target * (this * target) / magnitudeSquared
   }
 }
 
-  operator fun Double.times(v: Vector2D): Vector2D {
-    return v * this
-  }
+operator fun Double.times(v: Vector2D): Vector2D {
+  return v * this
+}

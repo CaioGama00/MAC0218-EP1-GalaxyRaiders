@@ -64,7 +64,7 @@ data class Vector2D(val dx: Double, val dy: Double) {
 
   fun vectorProject(target: Vector2D): Vector2D {
     val magnitudeSquared = target.magnitude * target.magnitude
-    return target* (this * target) / magnitudeSquared 
+    return target* (this * target) / magnitudeSquared
   }
 }
 

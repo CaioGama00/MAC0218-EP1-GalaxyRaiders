@@ -81,7 +81,16 @@ class SpaceFieldTest {
   }
 
   @Test
-  fun `it has a list of objects with ship, missiles and asteroids`() {
+  fun `it starts with no explosions`() {
+    assertAll(
+      "SpaceField should initialize an empty list of explosions",
+      { assertNotNull(spaceField.explosions) },
+      { assertEquals(0, spaceField.explosions.size) },
+    )
+  }
+
+  @Test
+  fun `it has a list of objects with ship, missiles, asteroids and explosions`() {
     val ship = spaceField.ship
 
     spaceField.generateMissile()
@@ -90,8 +99,11 @@ class SpaceFieldTest {
     spaceField.generateAsteroid()
     val asteroid = spaceField.asteroids.last()
 
+    spaceField.generateExplosion(Point2D(0.0, 0.0))
+    val explosion = spaceField.explosions.last()
+
     val expectedSpaceObjects = listOf<SpaceObject>(
-      ship, missile, asteroid
+      ship, missile, asteroid, explosion
     )
 
     assertEquals(expectedSpaceObjects, spaceField.spaceObjects)
@@ -316,6 +328,14 @@ class SpaceFieldTest {
   }
 
   @Test
+  fun `it can generate a new explosion`() {
+    val numExplosions = spaceField.explosions.size
+    spaceField.generateExplosion(Point2D(0.0, 0.0))
+
+    assertEquals(numExplosions + 1, spaceField.explosions.size)
+  }
+
+  @Test
   fun `it can remove missiles outside its boundary`() {
     spaceField.generateMissile()
 
@@ -375,6 +395,64 @@ class SpaceFieldTest {
     spaceField.trimAsteroids()
 
     assertNotEquals(-1, spaceField.asteroids.indexOf(asteroid))
+  }
+
+  @Test
+  fun `it can remove explosions outside its boundary`() {
+    spaceField.generateExplosion(Point2D(100000.0, 100000.0))
+
+    val explosion = spaceField.explosions.last()
+
+    spaceField.trimExplosions()
+
+    assertEquals(-1, spaceField.explosions.indexOf(explosion))
+  }
+
+  @Test
+  fun `it does not remove explosions inside its boundary`() {
+    spaceField.generateExplosion(Point2D(2.0, 2.0))
+
+    val explosion = spaceField.explosions.last()
+
+    spaceField.trimExplosions()
+
+    assertNotEquals(-1, spaceField.explosions.indexOf(explosion))
+  }
+
+  @Test
+  fun `it can trigger explosions`() {
+    spaceField.generateExplosion(Point2D(0.0, 0.0))
+    spaceField.generateExplosion(Point2D(1.0, 0.0))
+    spaceField.triggerExplosions()
+    assertEquals(spaceField.explosions[0].triggered, true)
+    assertEquals(spaceField.explosions[1].triggered, true)
+  }
+
+  @Test
+  fun `it can clear only triggered explosions`() {
+    spaceField.generateExplosion(Point2D(0.0, 0.0))
+    spaceField.generateExplosion(Point2D(1.0, 0.0))
+    spaceField.generateExplosion(Point2D(2.0, 0.0))
+    spaceField.triggerExplosions()
+    spaceField.generateExplosion(Point2D(2.0, 0.0))
+    spaceField.clearExplosions()
+    val numExplosions = spaceField.explosions.size
+    assertEquals(numExplosions, 1)
+  }
+
+  @Test
+  fun `it can remove asterois and missiles`() {
+    spaceField.generateAsteroid()
+    val asteroid = spaceField.asteroids.last()
+    spaceField.clearObject(asteroid)
+    val numAsteroids = spaceField.asteroids.size
+    assertEquals(numAsteroids, 0)
+
+    spaceField.generateMissile()
+    val missile = spaceField.missiles.last()
+    spaceField.clearObject(missile)
+    val numMissiles = spaceField.missiles.size
+    assertEquals(numMissiles, 0)
   }
 
   private companion object {
