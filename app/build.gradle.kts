@@ -40,7 +40,10 @@ repositories {
 }
 
 dependencies {
-    // Align versions of all Kotlin components
+  // Json dependency
+  implementation("org.json:json:20211205")
+  
+  // Align versions of all Kotlin components
   implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
 
   // Use the Kotlin JDK 8 standard library.

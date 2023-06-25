@@ -5,6 +5,13 @@ import galaxyraiders.ports.RandomGenerator
 import galaxyraiders.ports.ui.Controller
 import galaxyraiders.ports.ui.Controller.PlayerCommand
 import galaxyraiders.ports.ui.Visualizer
+/*import org.json.JSONException
+import org.json.JSONObject
+import org.json.JSONArray*/
+import java.io.FileWriter
+import java.io.PrintWriter
+import java.nio.charset.Charset
+import java.io.File
 import java.time.LocalDateTime
 import kotlin.system.measureTimeMillis
 
@@ -58,6 +65,8 @@ class GameEngine(
   }
 
   fun tick() {
+    /*this.updateScoreboard()
+    this.updateLeaderboard()*/
     this.processPlayerInput()
     this.updateSpaceObjects()
     this.renderSpaceField()
@@ -81,7 +90,44 @@ class GameEngine(
       }
     }
   }
+/* 
+  fun updateScoreboard() {
+    val path = "/score/Scoreboard.json"
+    val json = JSONObject()
+ 
+    try {
+        json.put("datetime", datetime)
+        json.put("asteroidsDestroyed", this.field.asteroidsDestroyed)
+        json.put("points", this.field.points)
+    } catch (e: JSONException) {
+        e.printStackTrace()
+    }
+ 
+    try {
+        PrintWriter(FileWriter(path, Charset.defaultCharset()))
+            .use { it.write(json.toString()) }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+  }
 
+  fun updateLeaderboard() {
+    val scoreboardFilePath = "score/Scoreboard.json"
+    val scoreboardFile = File(scoreboardFilePath)
+
+    val scoreboardJsonArray = JSONArray(scoreboardFile.readText())
+
+    val sortedScores = scoreboardJsonArray.toList()
+        .sortedByDescending { score: JSONObject -> score.getInt("points") }
+
+    val leaderboardJsonArray = JSONArray(sortedScores.take(3))
+
+    val leaderboardFilePath = "score/Leaderboard.json"
+    val leaderboardFile = File(leaderboardFilePath)
+
+    leaderboardFile.writeText(leaderboardJsonArray.toString())
+  }
+*/
   fun updateSpaceObjects() {
     if (!this.playing) return
     this.handleCollisions()
