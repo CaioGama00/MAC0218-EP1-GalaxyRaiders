@@ -8,6 +8,7 @@ import galaxyraiders.ports.ui.Visualizer
 /*import org.json.JSONException
 import org.json.JSONObject
 import org.json.JSONArray*/
+import java.lang.Runtime.getRuntime
 import java.io.FileWriter
 import java.io.PrintWriter
 import java.nio.charset.Charset
@@ -49,6 +50,10 @@ class GameEngine(
   var playing = true
 
   fun execute() {
+    /*getRuntime().addShutdownHook(Thread {
+      this.updateScoreboard()
+      this.updateLeaderboard()
+    })*/
     while (true) {
       val duration = measureTimeMillis { this.tick() }
 
@@ -65,8 +70,6 @@ class GameEngine(
   }
 
   fun tick() {
-    /*this.updateScoreboard()
-    this.updateLeaderboard()*/
     this.processPlayerInput()
     this.updateSpaceObjects()
     this.renderSpaceField()
