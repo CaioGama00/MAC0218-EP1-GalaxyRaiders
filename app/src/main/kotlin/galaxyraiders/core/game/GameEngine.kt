@@ -5,9 +5,9 @@ import galaxyraiders.ports.RandomGenerator
 import galaxyraiders.ports.ui.Controller
 import galaxyraiders.ports.ui.Controller.PlayerCommand
 import galaxyraiders.ports.ui.Visualizer
-/*import org.json.JSONException
+import org.json.JSONException
 import org.json.JSONObject
-import org.json.JSONArray*/
+import org.json.JSONArray
 import java.lang.Runtime.getRuntime
 import java.io.FileWriter
 import java.io.PrintWriter
@@ -15,6 +15,7 @@ import java.nio.charset.Charset
 import java.io.File
 import java.time.LocalDateTime
 import kotlin.system.measureTimeMillis
+import kotlin.system.exitProcess
 
 const val MILLISECONDS_PER_SECOND: Int = 1000
 const val RADIUS_WEIGHT: Int = 300
@@ -50,11 +51,10 @@ class GameEngine(
   var playing = true
 
   fun execute() {
-    /*getRuntime().addShutdownHook(Thread {
-      this.updateScoreboard()
-      this.updateLeaderboard()
-    })*/
-    while (true) {
+      Runtime.getRuntime().addShutdownHook(Thread {
+        updateScoreboard()
+    })
+      while (true) {
       val duration = measureTimeMillis { this.tick() }
 
       Thread.sleep(
@@ -70,6 +70,7 @@ class GameEngine(
   }
 
   fun tick() {
+    this.updateScoreboard()
     this.processPlayerInput()
     this.updateSpaceObjects()
     this.renderSpaceField()
@@ -93,29 +94,37 @@ class GameEngine(
       }
     }
   }
-/* 
-  fun updateScoreboard() {
-    val path = "/score/Scoreboard.json"
-    val json = JSONObject()
  
+  fun updateScoreboard() {
+    val path = "src/main/kotlin/galaxyraiders/core/score/Scoreboard.json"
+    val json = JSONObject()
+    val file = File(path)
+    val jsonArray = if (file.exists() && file.length() > 0) {
+      JSONArray(file.readText())
+  } else {
+      JSONArray()
+  }
+
     try {
         json.put("datetime", datetime)
         json.put("asteroidsDestroyed", this.field.asteroidsDestroyed)
         json.put("points", this.field.points)
-    } catch (e: JSONException) {
+        jsonArray.put(json)
+      } catch (e: JSONException) {
         e.printStackTrace()
     }
  
     try {
         PrintWriter(FileWriter(path, Charset.defaultCharset()))
-            .use { it.write(json.toString()) }
+            .use { it.write(jsonArray.toString()) } 
     } catch (e: Exception) {
         e.printStackTrace()
     }
+    exitProcess(0)
   }
-
+/* 
   fun updateLeaderboard() {
-    val scoreboardFilePath = "score/Scoreboard.json"
+    val scoreboardFilePath = "~/score/Scoreboard.json"
     val scoreboardFile = File(scoreboardFilePath)
 
     val scoreboardJsonArray = JSONArray(scoreboardFile.readText())
@@ -125,7 +134,7 @@ class GameEngine(
 
     val leaderboardJsonArray = JSONArray(sortedScores.take(3))
 
-    val leaderboardFilePath = "score/Leaderboard.json"
+    val leaderboardFilePath = "~/score/Leaderboard.json"
     val leaderboardFile = File(leaderboardFilePath)
 
     leaderboardFile.writeText(leaderboardJsonArray.toString())
