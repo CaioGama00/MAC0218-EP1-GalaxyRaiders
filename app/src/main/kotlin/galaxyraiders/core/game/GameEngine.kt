@@ -5,9 +5,9 @@ import galaxyraiders.ports.RandomGenerator
 import galaxyraiders.ports.ui.Controller
 import galaxyraiders.ports.ui.Controller.PlayerCommand
 import galaxyraiders.ports.ui.Visualizer
-/*import org.json.JSONException
+import org.json.JSONException
 import org.json.JSONObject
-import org.json.JSONArray*/
+import org.json.JSONArray
 import java.lang.Runtime.getRuntime
 import java.io.FileWriter
 import java.io.PrintWriter
@@ -15,6 +15,7 @@ import java.nio.charset.Charset
 import java.io.File
 import java.time.LocalDateTime
 import kotlin.system.measureTimeMillis
+import kotlin.system.exitProcess
 
 const val MILLISECONDS_PER_SECOND: Int = 1000
 const val RADIUS_WEIGHT: Int = 300
@@ -50,11 +51,7 @@ class GameEngine(
   var playing = true
 
   fun execute() {
-    /*getRuntime().addShutdownHook(Thread {
-      this.updateScoreboard()
-      this.updateLeaderboard()
-    })*/
-    while (true) {
+      while (true) {
       val duration = measureTimeMillis { this.tick() }
 
       Thread.sleep(
@@ -70,6 +67,8 @@ class GameEngine(
   }
 
   fun tick() {
+    this.updateScoreboard()
+    this.updateLeaderboard()
     this.processPlayerInput()
     this.updateSpaceObjects()
     this.renderSpaceField()
@@ -93,44 +92,62 @@ class GameEngine(
       }
     }
   }
-/* 
+ 
   fun updateScoreboard() {
-    val path = "/score/Scoreboard.json"
-    val json = JSONObject()
- 
-    try {
-        json.put("datetime", datetime)
-        json.put("asteroidsDestroyed", this.field.asteroidsDestroyed)
-        json.put("points", this.field.points)
-    } catch (e: JSONException) {
-        e.printStackTrace()
+    val path = "src/main/kotlin/galaxyraiders/core/score/Scoreboard.json"
+    val file = File(path)
+    val jsonArray = if (file.exists() && file.length() > 0) {
+        JSONArray(file.readText())
+    } else {
+        JSONArray()
     }
- 
+    val jsonDatetime = jsonArray.optJSONObject(jsonArray.length() - 1)?.getString("datetime")
+
+    if (jsonDatetime == datetime.toString()) {
+        jsonArray.optJSONObject(jsonArray.length() - 1)?.apply {
+            put("asteroidsDestroyed", field?.asteroidsDestroyed)
+            put("points", field?.points)
+        }
+    } else {
+        val newEntry = JSONObject().apply {
+            put("datetime", datetime.toString())
+            put("asteroidsDestroyed", field?.asteroidsDestroyed)
+            put("points", field?.points)
+        }
+        jsonArray.put(newEntry)
+    }
+
     try {
-        PrintWriter(FileWriter(path, Charset.defaultCharset()))
-            .use { it.write(json.toString()) }
+        FileWriter(path, Charset.defaultCharset()).use { it.write(jsonArray.toString()) }
     } catch (e: Exception) {
         e.printStackTrace()
     }
-  }
+}
+
 
   fun updateLeaderboard() {
-    val scoreboardFilePath = "score/Scoreboard.json"
+    val scoreboardFilePath = "src/main/kotlin/galaxyraiders/core/score/Scoreboard.json"
     val scoreboardFile = File(scoreboardFilePath)
-
-    val scoreboardJsonArray = JSONArray(scoreboardFile.readText())
-
-    val sortedScores = scoreboardJsonArray.toList()
-        .sortedByDescending { score: JSONObject -> score.getInt("points") }
-
-    val leaderboardJsonArray = JSONArray(sortedScores.take(3))
-
-    val leaderboardFilePath = "score/Leaderboard.json"
-    val leaderboardFile = File(leaderboardFilePath)
-
-    leaderboardFile.writeText(leaderboardJsonArray.toString())
+  
+    if (scoreboardFile.exists() && scoreboardFile.length() > 0) {
+        val scoreboardJsonArray = JSONArray(scoreboardFile.readText())
+  
+        val sortedScores = scoreboardJsonArray.toList()
+            .sortedWith(compareByDescending { (it as? JSONObject?)?.optInt("points", 0) })
+  
+        val leaderboardJsonArray = JSONArray(sortedScores.take(3))
+  
+        val leaderboardFilePath = "src/main/kotlin/galaxyraiders/core/score/Leaderboard.json"
+        val leaderboardFile = File(leaderboardFilePath)
+  
+        try {
+            FileWriter(leaderboardFile, Charset.defaultCharset()).use { it.write(leaderboardJsonArray.toString()) }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
   }
-*/
+
   fun updateSpaceObjects() {
     if (!this.playing) return
     this.handleCollisions()
