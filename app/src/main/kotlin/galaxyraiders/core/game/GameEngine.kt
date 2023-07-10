@@ -96,57 +96,77 @@ class GameEngine(
   fun updateScoreboard() {
     val path = "src/main/kotlin/galaxyraiders/core/score/Scoreboard.json"
     val file = File(path)
-    val jsonArray = if (file.exists() && file.length() > 0) {
-        JSONArray(file.readText())
+    val jsonObject = if (file.exists() && file.length() > 0) {
+        JSONObject(file.readText())
     } else {
-        JSONArray()
+        JSONObject()
     }
-    val jsonDatetime = jsonArray.optJSONObject(jsonArray.length() - 1)?.getString("datetime")
+    val scoresArray = jsonObject.optJSONArray("scores")
+    val jsonDatetime = scoresArray?.optJSONObject(scoresArray.length() - 1)?.getString("datetime")
 
     if (jsonDatetime == datetime.toString()) {
-        jsonArray.optJSONObject(jsonArray.length() - 1)?.apply {
-            put("asteroidsDestroyed", field?.asteroidsDestroyed)
-            put("points", field?.points)
+        scoresArray.optJSONObject(scoresArray.length() - 1)?.apply {
+            put("asteroidsDestroyed", field.asteroidsDestroyed)
+            put("points", field.points)
         }
     } else {
         val newEntry = JSONObject().apply {
             put("datetime", datetime.toString())
-            put("asteroidsDestroyed", field?.asteroidsDestroyed)
-            put("points", field?.points)
+            put("asteroidsDestroyed", field.asteroidsDestroyed)
+            put("points", field.points)
         }
-        jsonArray.put(newEntry)
+        if (scoresArray == null) {
+            jsonObject.put("scores", JSONArray().put(newEntry))
+        } else {
+            scoresArray.put(newEntry)
+        }
     }
 
     try {
-        FileWriter(path, Charset.defaultCharset()).use { it.write(jsonArray.toString()) }
+        FileWriter(path, Charset.defaultCharset()).use { writer ->
+            writer.write(jsonObject.toString(2))
+            writer.write(System.lineSeparator())
+        }
     } catch (e: Exception) {
         e.printStackTrace()
     }
-}
+  }
 
 
   fun updateLeaderboard() {
-    val scoreboardFilePath = "src/main/kotlin/galaxyraiders/core/score/Scoreboard.json"
-    val scoreboardFile = File(scoreboardFilePath)
-  
-    if (scoreboardFile.exists() && scoreboardFile.length() > 0) {
-        val scoreboardJsonArray = JSONArray(scoreboardFile.readText())
-  
-        val sortedScores = scoreboardJsonArray.toList()
-            .sortedWith(compareByDescending { (it as? JSONObject?)?.optInt("points", 0) })
-  
-        val leaderboardJsonArray = JSONArray(sortedScores.take(3))
-  
-        val leaderboardFilePath = "src/main/kotlin/galaxyraiders/core/score/Leaderboard.json"
-        val leaderboardFile = File(leaderboardFilePath)
-  
-        try {
-            FileWriter(leaderboardFile, Charset.defaultCharset()).use { it.write(leaderboardJsonArray.toString()) }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+    val scoreboardPath = "src/main/kotlin/galaxyraiders/core/score/Scoreboard.json"
+    val leaderboardPath = "src/main/kotlin/galaxyraiders/core/score/Leaderboard.json"
+    
+    val scoreboardFile = File(scoreboardPath)
+    val leaderboardFile = File(leaderboardPath)
+    
+    val scoreboardJsonString = scoreboardFile.readText()
+    val scoreboardJson = if (scoreboardJsonString.isNotEmpty()) {
+        JSONObject(scoreboardJsonString)
+    } else {
+        JSONObject()
     }
-  }
+    
+    val scoresArray = scoreboardJson.optJSONArray("scores")
+    
+    val sortedScoresArray = if (scoresArray != null && scoresArray.length() > 0) {
+        val scoresList = (0 until scoresArray.length())
+            .map { scoresArray.getJSONObject(it) }
+            .sortedByDescending { it.getInt("points") }
+        JSONArray(scoresList)
+    } else {
+        JSONArray()
+    }
+    
+    val leaderboardJson = JSONArray()
+    
+    for (i in 0 until minOf(3, sortedScoresArray.length())) {
+        val score = sortedScoresArray.getJSONObject(i)
+        leaderboardJson.put(score)
+    }
+    
+    leaderboardFile.writeText(leaderboardJson.toString(2))
+}
 
   fun updateSpaceObjects() {
     if (!this.playing) return
