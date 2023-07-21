@@ -49,11 +49,9 @@ class GameEngine(
   val datetime: LocalDateTime = LocalDateTime.now()
 
   var playing = true
+  var updateDelay = 0
 
   fun execute() {
-      Runtime.getRuntime().addShutdownHook(Thread {
-        updateScoreboard()
-    })
       while (true) {
       val duration = measureTimeMillis { this.tick() }
 
@@ -70,10 +68,15 @@ class GameEngine(
   }
 
   fun tick() {
-    this.updateScoreboard()
     this.processPlayerInput()
     this.updateSpaceObjects()
     this.renderSpaceField()
+    updateDelay += 1
+    if (updateDelay == 500){
+      this.updateScoreboard()
+      this.updateLeaderboard()
+      updateDelay = 0
+    }
   }
 
   fun processPlayerInput() {
@@ -97,49 +100,80 @@ class GameEngine(
  
   fun updateScoreboard() {
     val path = "src/main/kotlin/galaxyraiders/core/score/Scoreboard.json"
-    val json = JSONObject()
     val file = File(path)
-    val jsonArray = if (file.exists() && file.length() > 0) {
-      JSONArray(file.readText())
-  } else {
-      JSONArray()
-  }
+    val jsonObject = if (file.exists() && file.length() > 0) {
+        JSONObject(file.readText())
+    } else {
+        JSONObject()
+    }
+    val scoresArray = jsonObject.optJSONArray("scores")
+    val jsonDatetime = scoresArray?.optJSONObject(scoresArray.length() - 1)?.getString("datetime")
+
+    if (jsonDatetime == datetime.toString()) {
+        scoresArray.optJSONObject(scoresArray.length() - 1)?.apply {
+            put("asteroidsDestroyed", field.asteroidsDestroyed)
+            put("points", field.points)
+        }
+    } else {
+        val newEntry = JSONObject().apply {
+            put("datetime", datetime.toString())
+            put("asteroidsDestroyed", field.asteroidsDestroyed)
+            put("points", field.points)
+        }
+        if (scoresArray == null) {
+            jsonObject.put("scores", JSONArray().put(newEntry))
+        } else {
+            scoresArray.put(newEntry)
+        }
+    }
 
     try {
-        json.put("datetime", datetime)
-        json.put("asteroidsDestroyed", this.field.asteroidsDestroyed)
-        json.put("points", this.field.points)
-        jsonArray.put(json)
-      } catch (e: JSONException) {
-        e.printStackTrace()
-    }
- 
-    try {
-        PrintWriter(FileWriter(path, Charset.defaultCharset()))
-            .use { it.write(jsonArray.toString()) } 
+        FileWriter(path, Charset.defaultCharset()).use { writer ->
+            writer.write(jsonObject.toString(2))
+            writer.write(System.lineSeparator())
+        }
     } catch (e: Exception) {
         e.printStackTrace()
     }
-    exitProcess(0)
   }
-/* 
+
+
   fun updateLeaderboard() {
-    val scoreboardFilePath = "~/score/Scoreboard.json"
-    val scoreboardFile = File(scoreboardFilePath)
+    val scoreboardPath = "src/main/kotlin/galaxyraiders/core/score/Scoreboard.json"
+    val leaderboardPath = "src/main/kotlin/galaxyraiders/core/score/Leaderboard.json"
+    
+    val scoreboardFile = File(scoreboardPath)
+    val leaderboardFile = File(leaderboardPath)
+    
+    val scoreboardJsonString = scoreboardFile.readText()
+    val scoreboardJson = if (scoreboardJsonString.isNotEmpty()) {
+        JSONObject(scoreboardJsonString)
+    } else {
+        JSONObject()
+    }
+    
+    val scoresArray = scoreboardJson.optJSONArray("scores")
+    
+    val sortedScoresArray = if (scoresArray != null && scoresArray.length() > 0) {
+        val scoresList = (0 until scoresArray.length())
+            .map { scoresArray.getJSONObject(it) }
+            .sortedByDescending { it.getInt("points") }
+        JSONArray(scoresList)
+    } else {
+        JSONArray()
+    }
+    
+    val leaderboardJson = JSONArray()
+    
+    for (i in 0 until minOf(3, sortedScoresArray.length())) {
+        val score = sortedScoresArray.getJSONObject(i)
+        leaderboardJson.put(score)
+    }
+    
+    leaderboardFile.writeText(leaderboardJson.toString(2))
+}
 
-    val scoreboardJsonArray = JSONArray(scoreboardFile.readText())
 
-    val sortedScores = scoreboardJsonArray.toList()
-        .sortedByDescending { score: JSONObject -> score.getInt("points") }
-
-    val leaderboardJsonArray = JSONArray(sortedScores.take(3))
-
-    val leaderboardFilePath = "~/score/Leaderboard.json"
-    val leaderboardFile = File(leaderboardFilePath)
-
-    leaderboardFile.writeText(leaderboardJsonArray.toString())
-  }
-*/
   fun updateSpaceObjects() {
     if (!this.playing) return
     this.handleCollisions()
@@ -167,11 +201,6 @@ class GameEngine(
         (first, second) ->
       if (first.impacts(second)) {
         if (checkExplosion(first, second)) {
-          print("Asteroids Destroyed: ")
-          print(this.field.asteroidsDestroyed)
-          print(" Points: ")
-          println(this.field.points)
-
           if (first is Asteroid) {
             this.field.points += pointsForAsteroid(first)
           } else if (second is Asteroid) {
